@@ -24,12 +24,13 @@ set(QL_SOURCES
     cashflows/inflationcoupon.cpp
     cashflows/inflationcouponpricer.cpp
     cashflows/lineartsrpricer.cpp
+    cashflows/multipleresetscoupon.cpp
     cashflows/overnightindexedcoupon.cpp
+    cashflows/overnightindexedcouponpricer.cpp
     cashflows/rangeaccrual.cpp
     cashflows/replication.cpp
     cashflows/simplecashflow.cpp
     cashflows/timebasket.cpp
-    cashflows/subperiodcoupon.cpp
     cashflows/yoyinflationcoupon.cpp
     cashflows/zeroinflationcashflow.cpp
     currencies/africa.cpp
@@ -49,7 +50,6 @@ set(QL_SOURCES
     experimental/asian/analytic_discr_geom_av_price_heston.cpp
     experimental/averageois/arithmeticaverageois.cpp
     experimental/averageois/arithmeticoisratehelper.cpp
-    experimental/averageois/averageoiscouponpricer.cpp
     experimental/averageois/makearithmeticaverageois.cpp
     experimental/barrieroption/mcdoublebarrierengine.cpp
     experimental/barrieroption/discretizeddoublebarrieroption.cpp
@@ -235,6 +235,7 @@ set(QL_SOURCES
     indexes/ibor/euribor.cpp
     indexes/ibor/eurlibor.cpp
     indexes/ibor/fedfunds.cpp
+    indexes/ibor/kofr.cpp
     indexes/ibor/libor.cpp
     indexes/ibor/shibor.cpp
     indexes/ibor/sofr.cpp
@@ -375,7 +376,7 @@ set(QL_SOURCES
     math/integrals/integral.cpp
     math/integrals/kronrodintegral.cpp
     math/integrals/segmentintegral.cpp
-    math/interpolations/chebyshevinterpolation.cpp    
+    math/interpolations/chebyshevinterpolation.cpp
     math/matrix.cpp
     math/matrixutilities/basisincompleteordered.cpp
     math/matrixutilities/bicgstab.cpp
@@ -429,7 +430,6 @@ set(QL_SOURCES
     math/randomnumbers/xoshiro256starstaruniformrng.cpp
     math/richardsonextrapolation.cpp
     math/rounding.cpp
-    math/sampledcurve.cpp
     math/statistics/discrepancystatistics.cpp
     math/statistics/generalstatistics.cpp
     math/statistics/histogram.cpp
@@ -646,7 +646,6 @@ set(QL_SOURCES
     models/volatility/constantestimator.cpp
     models/volatility/garch.cpp
     money.cpp
-    optional.cpp
     patterns/observable.cpp
     position.cpp
     prices.cpp
@@ -753,7 +752,6 @@ set(QL_SOURCES
     pricingengines/vanilla/fdhestonvanillaengine.cpp
     pricingengines/vanilla/fdsabrvanillaengine.cpp
     pricingengines/vanilla/fdsimplebsswingengine.cpp
-    pricingengines/vanilla/fdvanillaengine.cpp
     pricingengines/vanilla/hestonexpansionengine.cpp
     pricingengines/vanilla/integralengine.cpp
     pricingengines/vanilla/jumpdiffusionengine.cpp
@@ -961,7 +959,9 @@ set(QL_HEADERS
     cashflows/inflationcoupon.hpp
     cashflows/inflationcouponpricer.hpp
     cashflows/lineartsrpricer.hpp
+    cashflows/multipleresetscoupon.hpp
     cashflows/overnightindexedcoupon.hpp
+    cashflows/overnightindexedcouponpricer.hpp
     cashflows/rangeaccrual.hpp
     cashflows/rateaveraging.hpp
     cashflows/replication.hpp
@@ -1090,32 +1090,23 @@ set(QL_HEADERS
     experimental/credit/spotlosslatentmodel.hpp
     experimental/credit/spreadedhazardratecurve.hpp
     experimental/credit/syntheticcdo.hpp
-    experimental/exoticoptions/analyticamericanmargrabeengine.hpp
-    experimental/exoticoptions/analyticcomplexchooserengine.hpp
-    experimental/exoticoptions/analyticcompoundoptionengine.hpp
-    experimental/exoticoptions/analyticeuropeanmargrabeengine.hpp
     experimental/exoticoptions/analyticholderextensibleoptionengine.hpp
     experimental/exoticoptions/analyticpartialtimebarrieroptionengine.hpp
     experimental/exoticoptions/analyticpdfhestonengine.hpp
-    experimental/exoticoptions/analyticsimplechooserengine.hpp
     experimental/exoticoptions/analytictwoassetbarrierengine.hpp
     experimental/exoticoptions/analytictwoassetcorrelationengine.hpp
     experimental/exoticoptions/analyticwriterextensibleoptionengine.hpp
-    experimental/exoticoptions/complexchooseroption.hpp
-    experimental/exoticoptions/compoundoption.hpp
     experimental/exoticoptions/continuousarithmeticasianlevyengine.hpp
     experimental/exoticoptions/continuousarithmeticasianvecerengine.hpp
     experimental/exoticoptions/everestoption.hpp
     experimental/exoticoptions/himalayaoption.hpp
     experimental/exoticoptions/holderextensibleoption.hpp
     experimental/exoticoptions/kirkspreadoptionengine.hpp
-    experimental/exoticoptions/margrabeoption.hpp
     experimental/exoticoptions/mceverestengine.hpp
     experimental/exoticoptions/mchimalayaengine.hpp
     experimental/exoticoptions/mcpagodaengine.hpp
     experimental/exoticoptions/pagodaoption.hpp
     experimental/exoticoptions/partialtimebarrieroption.hpp
-    experimental/exoticoptions/simplechooseroption.hpp
     experimental/exoticoptions/spreadoption.hpp
     experimental/exoticoptions/twoassetbarrieroption.hpp
     experimental/exoticoptions/twoassetcorrelationoption.hpp
@@ -1205,7 +1196,6 @@ set(QL_HEADERS
     experimental/swaptions/irregularswaption.hpp
     experimental/termstructures/basisswapratehelpers.hpp
     experimental/termstructures/crosscurrencyratehelpers.hpp
-    experimental/termstructures/multicurvesensitivities.hpp
     experimental/variancegamma/analyticvariancegammaengine.hpp
     experimental/variancegamma/fftengine.hpp
     experimental/variancegamma/fftvanillaengine.hpp
@@ -1261,6 +1251,7 @@ set(QL_HEADERS
     indexes/ibor/gbplibor.hpp
     indexes/ibor/jibar.hpp
     indexes/ibor/jpylibor.hpp
+    indexes/ibor/kofr.hpp
     indexes/ibor/libor.hpp
     indexes/ibor/mosprime.hpp
     indexes/ibor/nzdlibor.hpp
@@ -1414,7 +1405,6 @@ set(QL_HEADERS
     math/copulas/maxcopula.hpp
     math/copulas/mincopula.hpp
     math/copulas/plackettcopula.hpp
-    math/curve.hpp
     math/distributions/binomialdistribution.hpp
     math/distributions/bivariatenormaldistribution.hpp
     math/distributions/bivariatestudenttdistribution.hpp
@@ -1452,7 +1442,7 @@ set(QL_HEADERS
     math/interpolations/backwardflatlinearinterpolation.hpp
     math/interpolations/bicubicsplineinterpolation.hpp
     math/interpolations/bilinearinterpolation.hpp
-    math/interpolations/chebyshevinterpolation.hpp    
+    math/interpolations/chebyshevinterpolation.hpp
     math/interpolations/convexmonotoneinterpolation.hpp
     math/interpolations/cubicinterpolation.hpp
     math/interpolations/extrapolation.hpp
@@ -1469,7 +1459,6 @@ set(QL_HEADERS
     math/interpolations/sabrinterpolation.hpp
     math/interpolations/xabrinterpolation.hpp
     math/kernelfunctions.hpp
-    math/lexicographicalview.hpp
     math/linearleastsquaresregression.hpp
     math/matrix.hpp
     math/matrixutilities/basisincompleteordered.hpp
@@ -1618,7 +1607,6 @@ set(QL_HEADERS
     methods/finitedifferences/parallelevolver.hpp
     methods/finitedifferences/pde.hpp
     methods/finitedifferences/pdebsm.hpp
-    methods/finitedifferences/pdeshortrate.hpp
     methods/finitedifferences/schemes/boundaryconditionschemehelper.hpp
     methods/finitedifferences/schemes/craigsneydscheme.hpp
     methods/finitedifferences/schemes/cranknicolsonscheme.hpp
@@ -1629,7 +1617,6 @@ set(QL_HEADERS
     methods/finitedifferences/schemes/methodoflinesscheme.hpp
     methods/finitedifferences/schemes/modifiedcraigsneydscheme.hpp
     methods/finitedifferences/schemes/trbdf2scheme.hpp
-    methods/finitedifferences/shoutcondition.hpp
     methods/finitedifferences/solvers/fdm1dimsolver.hpp
     methods/finitedifferences/solvers/fdm2dblackscholessolver.hpp
     methods/finitedifferences/solvers/fdm2dimsolver.hpp
@@ -1741,7 +1728,6 @@ set(QL_HEADERS
     models/marketmodels/driftcomputation/lmmdriftcalculator.hpp
     models/marketmodels/driftcomputation/lmmnormaldriftcalculator.hpp
     models/marketmodels/driftcomputation/smmdriftcalculator.hpp
-    models/marketmodels/duffsdeviceinnerproduct.hpp
     models/marketmodels/evolutiondescription.hpp
     models/marketmodels/evolver.hpp
     models/marketmodels/evolvers/lognormalcmswapratepc.hpp
@@ -1845,7 +1831,6 @@ set(QL_HEADERS
     numericalmethod.hpp
     option.hpp
     optional.hpp
-    patterns/composite.hpp
     patterns/curiouslyrecurring.hpp
     patterns/lazyobject.hpp
     patterns/observable.hpp
@@ -1969,14 +1954,11 @@ set(QL_HEADERS
     pricingengines/vanilla/fdblackscholesshoutengine.hpp
     pricingengines/vanilla/fdcirvanillaengine.hpp
     pricingengines/vanilla/fdcevvanillaengine.hpp
-    pricingengines/vanilla/fdconditions.hpp
-    pricingengines/vanilla/fddividendengine.hpp
     pricingengines/vanilla/fdhestonhullwhitevanillaengine.hpp
     pricingengines/vanilla/fdhestonvanillaengine.hpp
     pricingengines/vanilla/fdmultiperiodengine.hpp
     pricingengines/vanilla/fdsabrvanillaengine.hpp
     pricingengines/vanilla/fdsimplebsswingengine.hpp
-    pricingengines/vanilla/fdstepconditionengine.hpp
     pricingengines/vanilla/fdvanillaengine.hpp
     pricingengines/vanilla/hestonexpansionengine.hpp
     pricingengines/vanilla/integralengine.hpp
@@ -2116,7 +2098,6 @@ set(QL_HEADERS
     termstructures/yield/bootstraptraits.hpp
     termstructures/yield/compositezeroyieldstructure.hpp
     termstructures/yield/discountcurve.hpp
-    termstructures/yield/drifttermstructure.hpp
     termstructures/yield/fittedbonddiscountcurve.hpp
     termstructures/yield/flatforward.hpp
     termstructures/yield/forwardcurve.hpp
@@ -2368,6 +2349,10 @@ target_compile_definitions(ql_library PRIVATE
 
 target_compile_options(ql_library PRIVATE
     ${OpenMP_CXX_FLAGS})
+
+# CMAKE_CXX_STANDARD is always set in top-level CMakeLists
+target_compile_features(ql_library PUBLIC
+    cxx_std_${CMAKE_CXX_STANDARD})  
 
 if(MSVC AND CMAKE_UNITY_BUILD)
     # for Unity builds, we need to add /bigobj

@@ -22,6 +22,7 @@
 #include "utilities.hpp"
 #include <ql/cashflows/iborcoupon.hpp>
 #include <ql/indexes/bmaindex.hpp>
+#include <ql/indexes/ibor/estr.hpp>
 #include <ql/indexes/ibor/euribor.hpp>
 #include <ql/indexes/ibor/jpylibor.hpp>
 #include <ql/indexes/ibor/usdlibor.hpp>
@@ -40,12 +41,14 @@
 #include <ql/termstructures/globalbootstrap.hpp>
 #include <ql/termstructures/yield/bondhelpers.hpp>
 #include <ql/termstructures/yield/flatforward.hpp>
+#include <ql/termstructures/yield/oisratehelper.hpp>
 #include <ql/termstructures/yield/piecewiseyieldcurve.hpp>
 #include <ql/termstructures/yield/ratehelpers.hpp>
 #include <ql/time/asx.hpp>
 #include <ql/time/calendars/canada.hpp>
 #include <ql/time/calendars/japan.hpp>
 #include <ql/time/calendars/jointcalendar.hpp>
+#include <ql/time/calendars/mexico.hpp>
 #include <ql/time/calendars/target.hpp>
 #include <ql/time/calendars/weekendsonly.hpp>
 #include <ql/time/daycounters/actual360.hpp>
@@ -218,13 +221,13 @@ struct CommonVars {
         bmaConvention = Following;
         bmaDayCounter = ActualActual(ActualActual::ISDA);
 
-        deposits = LENGTH(depositData);
-        fras = LENGTH(fraData);
-        immFuts = LENGTH(immFutData);
-        asxFuts = LENGTH(asxFutData);
-        swaps = LENGTH(swapData);
-        bonds = LENGTH(bondData);
-        bmas = LENGTH(bmaData);
+        deposits = std::size(depositData);
+        fras = std::size(fraData);
+        immFuts = std::size(immFutData);
+        asxFuts = std::size(asxFutData);
+        swaps = std::size(swapData);
+        bonds = std::size(bondData);
+        bmas = std::size(bmaData);
 
         // market elements
         rates = std::vector<ext::shared_ptr<SimpleQuote> >(deposits+swaps);
@@ -1353,12 +1356,12 @@ BOOST_AUTO_TEST_CASE(testGlobalBootstrap, *precondition(usingAtParCoupons())) {
     curve->enableExtrapolation();
 
     // check expected pillar dates
-    for (Size i = 0; i < LENGTH(refDate); ++i) {
+    for (Size i = 0; i < std::size(refDate); ++i) {
         BOOST_CHECK_EQUAL(refDate[i], helpers[i]->pillarDate());
     }
 
     // check expected zero rates
-    for (Size i = 0; i < LENGTH(refZeroRate); ++i) {
+    for (Size i = 0; i < std::size(refZeroRate); ++i) {
         // 0.01 basis points tolerance
         QL_CHECK_SMALL(std::fabs(refZeroRate[i] - curve->zeroRate(refDate[i], Actual360(), Continuous).rate()),
                           1E-6);
@@ -1434,9 +1437,9 @@ BOOST_AUTO_TEST_CASE(testIterativeBootstrapRetries) {
 
     // Create the FX swap rate helpers for the ARS in USD curve.
     vector<ext::shared_ptr<RateHelper> > instruments;
-    for (map<Period, Real>::const_iterator it = arsFwdPoints.begin(); it != arsFwdPoints.end(); ++it) {
-        Handle<Quote> arsFwd(ext::make_shared<SimpleQuote>(it->second));
-        instruments.push_back(ext::make_shared<FxSwapRateHelper>(arsFwd, arsSpot, it->first, 2,
+    for (auto & arsFwdPoint : arsFwdPoints) {
+        Handle<Quote> arsFwd(ext::make_shared<SimpleQuote>(arsFwdPoint.second));
+        instruments.push_back(ext::make_shared<FxSwapRateHelper>(arsFwd, arsSpot, arsFwdPoint.first, 2,
             UnitedStates(UnitedStates::GovernmentBond), Following, false, true, usdYts));
     }
 
@@ -1543,6 +1546,22 @@ BOOST_AUTO_TEST_CASE(testCustomFuturesHelpers) {
                     << "\n expected rate:  " << io::rate(expected));
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(testSwapHelpersWithOnceFrequency) {
+    BOOST_TEST_MESSAGE("Testing single-coupon swap rate helpers...");
+
+    auto index = ext::make_shared<IborIndex>(
+        "TestIndex", 4*Weeks, 1, MXNCurrency(),
+        Mexico(), Following, false, Actual360());
+
+    Handle<Quote> r(ext::make_shared<SimpleQuote>(0.02));
+
+    BOOST_CHECK_NO_THROW(SwapRateHelper(r, 4*Weeks, Mexico(), Once, Following, Actual360(), index));
+
+    BOOST_CHECK_NO_THROW(OISRateHelper(2, 4*Weeks, r, ext::make_shared<Estr>(), {}, false, 0, Following, Once));
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -86,6 +86,13 @@ namespace QuantLib {
     }
 
 
+    void FittedBondDiscountCurve::resetGuess(const Array& guess) {
+        QL_REQUIRE(guess.empty() || guess.size() == fittingMethod_->size(), "guess is of wrong size");
+        guessSolution_ = guess;
+        update();
+    }
+
+    
     void FittedBondDiscountCurve::performCalculations() const {
 
         QL_REQUIRE(!bondHelpers_.empty(), "no bondHelpers given");
@@ -123,10 +130,15 @@ namespace QuantLib {
         ext::shared_ptr<OptimizationMethod> optimizationMethod,
         Array l2,
         const Real minCutoffTime,
-        const Real maxCutoffTime)
+        const Real maxCutoffTime,
+        Constraint constraint)
     : constrainAtZero_(constrainAtZero), weights_(weights), l2_(std::move(l2)),
       calculateWeights_(weights.empty()), optimizationMethod_(std::move(optimizationMethod)),
-      minCutoffTime_(minCutoffTime), maxCutoffTime_(maxCutoffTime) {}
+      constraint_(std::move(constraint)),
+      minCutoffTime_(minCutoffTime), maxCutoffTime_(maxCutoffTime) {
+        if (constraint_.empty())
+            constraint_ = NoConstraint();
+    }
 
     void FittedBondDiscountCurve::FittingMethod::init() {
         // yield conventions
@@ -181,11 +193,11 @@ namespace QuantLib {
     void FittedBondDiscountCurve::FittingMethod::calculate() {
 
         FittingCost& costFunction = *costFunction_;
-        Constraint constraint = NoConstraint();
 
         // start with the guess solution, if it exists
         Array x(size(), 0.0);
         if (!curve_->guessSolution_.empty()) {
+            QL_REQUIRE(curve_->guessSolution_.size() == size(), "wrong size for guess");
             x = curve_->guessSolution_;
         }
 
@@ -213,7 +225,7 @@ namespace QuantLib {
         if(!optimization){
             optimization = ext::make_shared<Simplex>(curve_->simplexLambda_);
         }
-        Problem problem(costFunction, constraint, x);
+        Problem problem(costFunction, constraint_, x);
 
         Real rootEpsilon = curve_->accuracy_;
         Real functionEpsilon =  curve_->accuracy_;

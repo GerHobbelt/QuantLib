@@ -51,7 +51,7 @@ Real tolerance = 1.0e-6;
 
 template <class T>
 void testSingle(const T& I, const std::string& tag,
-                const ext::function<Real (Real)>& f,
+                const std::function<Real (Real)>& f,
                 Real xMin, Real xMax, Real expected) {
     Real calculated = I(f,xMin,xMax);
     if (std::fabs(calculated-expected) > tolerance) {
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(testFolinIntegration) {
 
     const Real tol = 1e-12;
 
-    for (Size i=0; i < LENGTH(nr); ++i) {
+    for (Size i=0; i < std::size(nr); ++i) {
         const Size n = nr[i];
         const Real calculatedCosine
             = FilonIntegral(FilonIntegral::Cosine, t, n)(cosineF(),0,2*M_PI);
