@@ -56,9 +56,9 @@ template <class Curve> class GlobalBootstrap {
 
       The additional helpers are treated like the usual rate helpers, but no standard pillar dates are added for them.
 
-      WARNING: This class is known to work with Traits Discount, ZeroYield, Forward (i.e. the usual traits for IR curves
-      in QL), it might fail for other traits - check the usage of Traits::updateGuess(), Traits::guess(),
-      Traits::minValueAfter(), Traits::maxValueAfter() in this class against them.
+      WARNING: This class is known to work with Traits Discount, ZeroYield, Forward, i.e. the usual traits for IR curves
+      in QL. It requires Traits::minValueGlobal() and Traits::maxValueGlobal() to be implemented. Also, check the usage
+      of Traits::updateGuess(), Traits::guess() in this class.
     */
     GlobalBootstrap(std::vector<ext::shared_ptr<typename Traits::helper> > additionalHelpers,
                     std::function<std::vector<Date>()> additionalDates,
@@ -246,71 +246,46 @@ template <class Curve> void GlobalBootstrap<Curve>::calculate() const {
     const Size numberBounds = ts_->times_.size() - 1;
     std::vector<Real> lowerBounds(numberBounds), upperBounds(numberBounds);
     for (Size i = 0; i < numberBounds; ++i) {
-        // just pass zero as the first alive helper, it's not used in the standard QL traits anyway
-        lowerBounds[i] = Traits::minValueAfter(i + 1, ts_, validCurve_, 0);
-        upperBounds[i] = Traits::maxValueAfter(i + 1, ts_, validCurve_, 0);
+        lowerBounds[i] = Traits::minValueGlobal(i + 1, ts_, validCurve_);
+        upperBounds[i] = Traits::maxValueGlobal(i + 1, ts_, validCurve_);
     }
 
     // setup cost function
-    class TargetFunction : public CostFunction {
-      public:
-        TargetFunction(const Size firstHelper,
-                       const Size numberHelpers,
-                       std::function<Array()> additionalErrors,
-                       Curve* ts,
-                       std::vector<Real> lowerBounds,
-                       std::vector<Real> upperBounds)
-        : firstHelper_(firstHelper), numberHelpers_(numberHelpers),
-          additionalErrors_(std::move(additionalErrors)), ts_(ts),
-          lowerBounds_(std::move(lowerBounds)), upperBounds_(std::move(upperBounds)) {}
-
-        Real transformDirect(const Real x, const Size i) const {
-            return (std::atan(x) + M_PI_2) / M_PI * (upperBounds_[i] - lowerBounds_[i]) + lowerBounds_[i];
-        }
-
-        Real transformInverse(const Real y, const Size i) const {
-            return std::tan((y - lowerBounds_[i]) * M_PI / (upperBounds_[i] - lowerBounds_[i]) - M_PI_2);
-        }
-
-        Real value(const Array& x) const override {
-            Array v = values(x);
-            std::transform(v.begin(), v.end(), v.begin(), [](Real x) -> Real { return x*x; });
-            return std::sqrt(std::accumulate(v.begin(), v.end(), Real(0.0)) / static_cast<Real>(v.size()));
-        }
-
-        Array values(const Array& x) const override {
-            for (Size i = 0; i < x.size(); ++i) {
-                Traits::updateGuess(ts_->data_, transformDirect(x[i], i), i + 1);
-            }
-            ts_->interpolation_.update();
-            std::vector<Real> result(numberHelpers_);
-            for (Size i = 0; i < numberHelpers_; ++i) {
-                result[i] = ts_->instruments_[firstHelper_ + i]->quote()->value() -
-                            ts_->instruments_[firstHelper_ + i]->impliedQuote();
-            }
-            if (additionalErrors_) {
-                Array tmp = additionalErrors_();
-                result.resize(numberHelpers_ + tmp.size());
-                for (Size i = 0; i < tmp.size(); ++i) {
-                    result[numberHelpers_ + i] = tmp[i];
-                }
-            }
-            return Array(result.begin(), result.end());
-        }
-
-      private:
-        Size firstHelper_, numberHelpers_;
-        std::function<Array()> additionalErrors_;
-        Curve *ts_;
-        const std::vector<Real> lowerBounds_, upperBounds_;
+    auto transformDirect = [&](const Real x, const Size i) {
+        return (std::atan(x) + M_PI_2) / M_PI * (upperBounds[i] - lowerBounds[i]) + lowerBounds[i];
     };
-    TargetFunction cost(firstHelper_, numberHelpers_, additionalErrors_, ts_, lowerBounds, upperBounds);
+
+    auto transformInverse = [&](const Real y, const Size i) {
+        return std::tan((y - lowerBounds[i]) * M_PI / (upperBounds[i] - lowerBounds[i]) - M_PI_2);
+    };
+
+    SimpleCostFunction cost([&](const Array& x) {
+        for (Size i = 0; i < x.size(); ++i) {
+            Traits::updateGuess(ts_->data_, transformDirect(x[i], i), i + 1);
+        }
+        ts_->interpolation_.update();
+        std::vector<Real> result(numberHelpers_);
+        for (Size i = 0; i < numberHelpers_; ++i) {
+            result[i] = ts_->instruments_[firstHelper_ + i]->quote()->value() -
+                        ts_->instruments_[firstHelper_ + i]->impliedQuote();
+        }
+        if (additionalErrors_) {
+            Array tmp = additionalErrors_();
+            result.resize(numberHelpers_ + tmp.size());
+            for (Size i = 0; i < tmp.size(); ++i) {
+                result[numberHelpers_ + i] = tmp[i];
+            }
+        }
+        return Array(result.begin(), result.end());
+    });
 
     // setup guess
     Array guess(numberBounds);
     for (Size i = 0; i < numberBounds; ++i) {
         // just pass zero as the first alive helper, it's not used in the standard QL traits anyway
-        guess[i] = cost.transformInverse(Traits::guess(i + 1, ts_, validCurve_, 0), i);
+        // update ts_->data_ since Traits::guess() usually depends on previous values
+        Traits::updateGuess(ts_->data_, Traits::guess(i + 1, ts_, validCurve_, 0), i + 1);
+        guess[i] = transformInverse(ts_->data_[i + 1], i);
     }
 
     // setup problem
