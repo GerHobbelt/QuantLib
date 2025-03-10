@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2024 klaus Spanderen
+ Copyright (C) 2024 Klaus Spanderen
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -21,6 +21,7 @@
 
 #include <ql/math/functional.hpp>
 #include <ql/math/distributions/normaldistribution.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -29,7 +30,7 @@ namespace QuantLib {
         ext::shared_ptr<GeneralizedBlackScholesProcess> process2,
         Real correlation,
         Order order)
-    : SpreadBlackScholesVanillaEngine(process1, process2, correlation),
+    : SpreadBlackScholesVanillaEngine(std::move(process1), std::move(process2), correlation),
       order_(order) {
     }
 
@@ -68,7 +69,7 @@ namespace QuantLib {
         QL_REQUIRE(order_ == Second, "unknown approximation type");
 
         /*
-           In the original paper the second order was calculated using numerical differentiation.
+           In the original paper, the second-order approximation was computed using numerical differentiation.
            The following Mathematica scripts calculates the approximation to the n'th order.
 
            vol2Hat[R2_] := vol2*(R2 - K)/R2

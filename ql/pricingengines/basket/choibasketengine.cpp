@@ -116,7 +116,7 @@ namespace QuantLib {
             //q1 = inverse(C)*vStar1;
             for (Size i=0; i < n_; ++i)
                 q1[i] = (vStar1[i] - std::inner_product(
-                    C.row_begin(i), C.row_begin(i) + i, q1.begin(), 0.0))/C[i][i];
+                    C.row_begin(i), C.row_begin(i) + i, q1.begin(), Real(0.0)))/C[i][i];
 
             vStar1 /= Norm2(q1);
         }
@@ -135,8 +135,8 @@ namespace QuantLib {
             std::copy(R.row_begin(i)+1, R.row_end(i), R_2_n.row_begin(i));
 
         const SVD svd(C*R_2_n);
-        const Matrix U = svd.U();
-        const Array sv = svd.singularValues();
+        const Matrix& U = svd.U();
+        const Array& sv = svd.singularValues();
 
         Matrix v(n_, n_-1);
         for (Size i=0; i < n_-1; ++i)
@@ -190,11 +190,11 @@ namespace QuantLib {
         Array vq(n_);
         for (Size i=0; i < n_; ++i)
             vq[i] = 0.5*std::accumulate(
-                v.row_begin(i), v.row_end(i), 0.0,
+                v.row_begin(i), v.row_end(i), Real(0.0),
                 [](Real acc, Real x) -> Real { return acc + x*x; }
             );
 
-        MulitDimGaussianIntegration ghq(
+        MultiDimGaussianIntegration ghq(
             nIntOrder,
             [](const Size n) { return ext::make_shared<GaussHermiteIntegration>(n); }
         );
@@ -230,7 +230,7 @@ namespace QuantLib {
                 const auto deltaPricer = [&](const Array& z) -> Real {
                     const Real d = dStore[dStoreCounter++];
                     const Real vz = std::inner_product(
-                        v.row_begin(k), v.row_end(k), z.begin(), 0.0);
+                        v.row_begin(k), v.row_end(k), z.begin(), Real(0.0));
                     const Real f = std::exp(-M_SQRT2*vz - vq[k]);
 
                     return std::exp(-DotProduct(z, z)) * f * N(d + vStar1[k]);
@@ -246,7 +246,7 @@ namespace QuantLib {
                 for (Size k=0; k < n_; ++k) {
                     const auto fHatPricer =  [&](const Array& z) -> Real {
                         const Real vz = std::inner_product(
-                            v.row_begin(k), v.row_end(k), z.begin(), 0.0);
+                            v.row_begin(k), v.row_end(k), z.begin(), Real(0.0));
                         const Real f = std::exp(-M_SQRT2*vz - vq[k]);
 
                         return std::exp(-DotProduct(z, z)) * f;
@@ -254,7 +254,7 @@ namespace QuantLib {
                 fHat[k] = ghq(fHatPricer) * normFactor;
                 }
                 const Array cv = fwdDelta*fwd*(fHat-1.0);
-                results_.value -= std::accumulate(cv.begin(), cv.end(), 0.0);
+                results_.value -= std::accumulate(cv.begin(), cv.end(), Real(0.0));
             }
         }
     }

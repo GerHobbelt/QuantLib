@@ -1193,9 +1193,9 @@ BOOST_AUTO_TEST_CASE(testOperatorSplittingSpreadEngine) {
             { 0.7, 9.0863, 9.0862},
             { 0.9, 6.9148, 6.9134}
     };
-    for (Size i = 0; i < std::size(testData); ++i) {
-        const Real rho = testData[i][0];
-        Real expected = testData[i][1];
+    for (const auto & i : testData) {
+        const Real rho = i[0];
+        Real expected = i[1];
 
         option.setPricingEngine(
             ext::make_shared<OperatorSplittingSpreadEngine>(
@@ -1220,7 +1220,7 @@ BOOST_AUTO_TEST_CASE(testOperatorSplittingSpreadEngine) {
                 p1, p2, rho, OperatorSplittingSpreadEngine::Second)
         );
 
-        expected = testData[i][2];
+        expected = i[2];
         diff = std::abs(option.NPV() - expected);
         tol = 0.0005;
 
@@ -1762,61 +1762,61 @@ BOOST_AUTO_TEST_CASE(testDengLiZhouWithNegativeStrike) {
 BOOST_AUTO_TEST_CASE(testRootOfSumExponentials) {
     BOOST_TEST_MESSAGE("Testing the root of a sum of exponentials...");
 
-    BOOST_CHECK_THROW(SumExponentialsRootSolver(
+    BOOST_CHECK_THROW(detail::SumExponentialsRootSolver(
         {2.0, 3.0, 4.0}, {0.2, 0.4, -0.1}, 0.0).getRoot() , Error
     );
-    BOOST_CHECK_THROW(SumExponentialsRootSolver(
+    BOOST_CHECK_THROW(detail::SumExponentialsRootSolver(
         {2.0, -3.0, 4.0}, {0.2, -0.4, -0.1}, 0.0).getRoot(), Error
     );
 
     MersenneTwisterUniformRng mt(42);
 
     for (auto strategy: {
-    	std::make_tuple("Brent", SumExponentialsRootSolver::Brent),
-		std::make_tuple("Newton", SumExponentialsRootSolver::Newton),
-		std::make_tuple("Ridder", SumExponentialsRootSolver::Ridder),
-		std::make_tuple("Halley", SumExponentialsRootSolver::Halley)
-		}) {
+        std::make_tuple("Brent", detail::SumExponentialsRootSolver::Brent),
+        std::make_tuple("Newton", detail::SumExponentialsRootSolver::Newton),
+        std::make_tuple("Ridder", detail::SumExponentialsRootSolver::Ridder),
+        std::make_tuple("Halley", detail::SumExponentialsRootSolver::Halley)
+        }) {
 
-    	Size fCtr = 0;
-    	const Size n = 10000;
-    	const Real tol = 1e8*QL_EPSILON;
-    	const Real acc = 1e-4*tol;
-    	IncrementalStatistics stats;
+        Size fCtr = 0;
+        const Size n = 10000;
+        const Real tol = 1e8*QL_EPSILON;
+        const Real acc = 1e-4*tol;
+        IncrementalStatistics stats;
 
-		for (Size i=0; i < n; ++i) {
-			const Size n = (mt.nextInt32() % 10)+1;
-			Array a(n), sig(n);
-			const Real offset = (mt.nextReal() < 0.3)? -1.0 : 0.0;
-			for (Size j=0; j < n; ++j) {
-				a[j] = mt.nextReal() + offset;
-				sig[j] = copysign(1.0, a[j])*mt.nextReal();
-			}
-			const Real kMin = SumExponentialsRootSolver(a, sig, 0.0)(-10.0);
-			const Real kMax = SumExponentialsRootSolver(a, sig, 0.0)( 10.0);
-			const Real K = (kMax - kMin)*mt.nextReal() + kMin;
+        for (Size i=0; i < n; ++i) {
+            const Size n = (mt.nextInt32() % 10)+1;
+            Array a(n), sig(n);
+            const Real offset = (mt.nextReal() < 0.3)? -1.0 : 0.0;
+            for (Size j=0; j < n; ++j) {
+                a[j] = mt.nextReal() + offset;
+                sig[j] = std::copysign(Real(1.0), a[j])*mt.nextReal();
+            }
+            const Real kMin = detail::SumExponentialsRootSolver(a, sig, 0.0)(-10.0);
+            const Real kMax = detail::SumExponentialsRootSolver(a, sig, 0.0)( 10.0);
+            const Real K = (kMax - kMin)*mt.nextReal() + kMin;
 
-			const Real xValue = SumExponentialsRootSolver(a, sig, K)
-			    .getRoot(acc, SumExponentialsRootSolver::Brent);
+            const Real xValue = detail::SumExponentialsRootSolver(a, sig, K)
+                .getRoot(acc, detail::SumExponentialsRootSolver::Brent);
 
-            const SumExponentialsRootSolver solver(a, sig, K);
-			const Real xRoot = solver.getRoot(tol, std::get<1>(strategy));
+            const detail::SumExponentialsRootSolver solver(a, sig, K);
+            const Real xRoot = solver.getRoot(tol, std::get<1>(strategy));
 
-			stats.add(xValue - xRoot);
-			fCtr += solver.getFCtr() + solver.getDerivativeCtr() + solver.getSecondDerivativeCtr();
-		}
+            stats.add(xValue - xRoot);
+            fCtr += solver.getFCtr() + solver.getDerivativeCtr() + solver.getSecondDerivativeCtr();
+        }
 
-		if (fCtr > 15*n) {
+        if (fCtr > 15*n) {
             BOOST_FAIL("too many function calls needed for solver " << std::get<0>(strategy));
-		}
+        }
 
-		if (stats.standardDeviation() > 10*tol) {
+        if (stats.standardDeviation() > 10*tol) {
             BOOST_FAIL("failed to find root of sum of exponentials"
                    << "\n    solver   : " << std::get<0>(strategy)
                    << std::fixed << std::setprecision(15)
                    << "\n    stdev    : " << stats.standardDeviation()
                    << "\n    tolerance: " << tol);
-		}
+        }
     }
 }
 
@@ -1868,7 +1868,7 @@ BOOST_AUTO_TEST_CASE(testSingleFactorBsmBasketEngine) {
             );
 
         const Real strike = std::inner_product(
-            t.weights.begin(), t.weights.end(), t.underlyings.begin(), 0.0
+            t.weights.begin(), t.weights.end(), t.underlyings.begin(), Real(0.0)
         );
 
         const ext::shared_ptr<PlainVanillaPayoff> payoff
@@ -1949,11 +1949,11 @@ BOOST_AUTO_TEST_CASE(testGoldenChoiBasketEngineExample) {
         const ext::shared_ptr<SimpleQuote>& spot, Rate q, Volatility vol)
         -> ext::shared_ptr<GeneralizedBlackScholesProcess> {
         return ext::make_shared<GeneralizedBlackScholesProcess>(
-                Handle<Quote>(spot),
-                Handle<YieldTermStructure>(flatRate(today, q, dc)),
-                rTS,
-                Handle<BlackVolTermStructure>(flatVol(today, vol, dc))
-            );
+            Handle<Quote>(spot),
+            Handle<YieldTermStructure>(flatRate(today, q, dc)),
+            rTS,
+            Handle<BlackVolTermStructure>(flatVol(today, vol, dc))
+        );
     };
 
     const std::vector<ext::shared_ptr<GeneralizedBlackScholesProcess> >
@@ -2189,7 +2189,7 @@ BOOST_AUTO_TEST_CASE(testSpreadAndBasketBenchmarks) {
             {11.5795246248372834, 8.11486124233140238, 5.36890684802773066,
              3.35146299782513601, 1.97711593318812251}
         },
-        // unknown
+        // new
         {
             {80, 120, 100, 100}, {0.3, 0.4, 0.2, 0.35}, {0.01, 0.03, 0.07, 0.04}, 0.03,
             {{{1.0, 0.5, 0.35, 0.35},
@@ -2259,7 +2259,7 @@ BOOST_AUTO_TEST_CASE(testSpreadAndBasketBenchmarks) {
         )
         .withSteps(1)
         .withSamples(4096-1)
-        .withSeed(12345ul);
+        .withSeed(12345UL);
     };
 
     typedef std::function<ext::shared_ptr<PricingEngine>(
@@ -2358,7 +2358,7 @@ BOOST_AUTO_TEST_CASE(testSpreadAndBasketBenchmarks) {
                 }
             }
 
-            if (calculated.size() > 0) {
+            if (!calculated.empty()) {
                 for (Size i=0; i < calculated.size(); ++i) {
                     diff.push_back(b.referenceNPVs[i] - calculated[i]);
                     relDiff.push_back(diff.back()/b.referenceNPVs[i]);
@@ -2366,7 +2366,7 @@ BOOST_AUTO_TEST_CASE(testSpreadAndBasketBenchmarks) {
             }
         }
 
-        if (diff.size() > 0) {
+        if (!diff.empty()) {
             const Real calculatedRmse = std::sqrt(
                 DotProduct(Array(diff.begin(), diff.end()),
                            Array(diff.begin(), diff.end()) ) /diff.size());
@@ -2451,8 +2451,8 @@ BOOST_AUTO_TEST_CASE(testFdmAmericanBasketOptions) {
                << "\n    tolerance:   " << tol);
 }
 
-BOOST_AUTO_TEST_CASE(testPrecisionAmericanBasketOptions) {
-    BOOST_TEST_MESSAGE("Testing high precision American Options using multi-dim FDM...");
+BOOST_AUTO_TEST_CASE(testAccurateAmericanBasketOptions) {
+    BOOST_TEST_MESSAGE("Testing high precision American Options Pricing using multi-dim FDM...");
 
     const DayCounter dc = Actual365Fixed();
     const Date today = Date(28, October, 2024);

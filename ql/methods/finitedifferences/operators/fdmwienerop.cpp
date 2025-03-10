@@ -18,7 +18,7 @@
 */
 
 
-/*! \file fdmndimwienerop.cpp
+/*! \file fdmwienerop.cpp
 */
 
 #include <ql/termstructures/yieldtermstructure.hpp>
@@ -32,11 +32,10 @@
 namespace QuantLib {
 
     FdmWienerOp::FdmWienerOp(
-        ext::shared_ptr<FdmMesher> mesher,
+        const ext::shared_ptr<FdmMesher>& mesher,
         ext::shared_ptr<YieldTermStructure> rTS,
-        Array lambdas)
-        : rTS_(rTS),
-          r_(0.0) {
+        const Array& lambdas)
+    : rTS_(std::move(rTS)) {
 
         QL_REQUIRE(mesher->layout()->dim().size() == lambdas.size(),
             "mesher and lambdas need to be of the same dimension");
@@ -86,6 +85,7 @@ namespace QuantLib {
     std::vector<SparseMatrix> FdmWienerOp::toMatrixDecomp() const {
         std::vector<SparseMatrix> retVal;
 
+        retVal.reserve(ops_.size());
         for (const auto& op: ops_)
             retVal.push_back(op->toMatrix());
 

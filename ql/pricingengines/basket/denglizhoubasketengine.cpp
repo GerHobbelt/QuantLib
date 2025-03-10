@@ -17,7 +17,6 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "denglizhoubasketengine.hpp"
 
 #include <ql/exercise.hpp>
 #include <ql/math/functional.hpp>
@@ -25,6 +24,7 @@
 #include <ql/math/matrixutilities/pseudosqrt.hpp>
 #include <ql/math/matrixutilities/choleskydecomposition.hpp>
 #include <ql/pricingengines/basket/vectorbsmprocessextractor.hpp>
+#include <ql/pricingengines/basket/denglizhoubasketengine.hpp>
 
 namespace QuantLib {
 
@@ -62,7 +62,6 @@ namespace QuantLib {
 
         QL_REQUIRE(avgPayoff, "average or spread basket payoff expected");
 
-        // sort assets by their weight
         const Array weights = avgPayoff->weights();
         QL_REQUIRE(n_ == weights.size() && n_ > 1,
              "wrong number of weights arguments in payoff");
@@ -77,7 +76,7 @@ namespace QuantLib {
         p.reserve(n_);
 
         for (Size i=0; i < n_; ++i)
-            p.emplace_back(std::make_tuple(weights[i], i, s[i], dq[i], v[i]));
+            p.emplace_back(weights[i], i, s[i], dq[i], v[i]);
 
         const ext::shared_ptr<PlainVanillaPayoff> payoff =
              ext::dynamic_pointer_cast<PlainVanillaPayoff>(avgPayoff->basePayoff());
@@ -85,7 +84,7 @@ namespace QuantLib {
 
         Matrix rho;
         if (payoff->strike() < 0.0) {
-            p.emplace_back(std::make_tuple(1.0, n_, -payoff->strike(), dr0, 0.0));
+            p.emplace_back(1.0, n_, -payoff->strike(), dr0, 0.0);
             rho = Matrix(n_+1, n_+1);
             for (Size i=0; i < n_; ++i) {
                 std::copy(rho_.row_begin(i), rho_.row_end(i), rho.row_begin(i));
@@ -127,7 +126,7 @@ namespace QuantLib {
                 [](const Real& value, const auto& p) -> Real {
                     return value + std::get<0>(p)*std::get<2>(p);
             });
-            const Real F0 = std::accumulate(F.begin(), F.end(), 0.0);
+            const Real F0 = std::accumulate(F.begin(), F.end(), Real(0.0));
             const DiscountFactor dq_S0 = F0/S0*dr0;
 
             Real v_s = 0.0;
@@ -175,7 +174,7 @@ namespace QuantLib {
             results_.value = std::max(0.0, callValue);
         else {
             const Real fwd = _s[0]*_dq[0] - dr0*strike
-                - std::inner_product(_s.begin()+1, _s.end(), _dq.begin()+1, 0.0);
+                - std::inner_product(_s.begin()+1, _s.end(), _dq.begin()+1, Real(0.0));
             results_.value = std::max(0.0, callValue - fwd);
         }
     }
@@ -183,18 +182,18 @@ namespace QuantLib {
     Real DengLiZhouBasketEngine::I(Real u, Real tF2, const Matrix& D, const Matrix& DF, Size i) {
         const Real psi = 1.0/
             (1.0 + std::inner_product(
-                 D.row_begin(i), D.row_end(i), D.row_begin(i), 0.0));
+                 D.row_begin(i), D.row_end(i), D.row_begin(i), Real(0.0)));
         const Real sqrtPsi = std::sqrt(psi);
 
         const Real n_uSqrtPsi = NormalDistribution()(u*sqrtPsi);
         const Real J_0 = CumulativeNormalDistribution()(u*sqrtPsi);
 
         const Real vFv = std::inner_product(
-            DF.row_begin(i), DF.row_end(i), D.row_begin(i), 0.0);
+            DF.row_begin(i), DF.row_end(i), D.row_begin(i), Real(0.0));
         const Real J_1 = psi*sqrtPsi*(psi*u*u - 1.0) * vFv * n_uSqrtPsi;
 
         const Real vFFv = std::inner_product(
-            DF.row_begin(i), DF.row_end(i), DF.row_begin(i), 0.0);
+            DF.row_begin(i), DF.row_end(i), DF.row_begin(i), Real(0.0));
         const Real J_2 = u*psi*sqrtPsi*n_uSqrtPsi*(
                 2 * tF2
                 + vFv*vFv*(squared(squared(psi*u))
@@ -236,7 +235,7 @@ namespace QuantLib {
         for (Size i=1; i <= N; ++i)
             for (Size j=i; j <= N; ++j)
                 E(i-1, j-1) = E(j-1, i-1) =
-                     a*(((i==j)? squared(nu[j])*std::exp(mu[j])/(nu[0]*(R+K)) : 0.0)
+                     a*(((i==j)? squared(nu[j])*std::exp(mu[j])/(nu[0]*(R+K)) : Real(0.0))
                         -nu[i]*nu[j]*std::exp(mu[i]+mu[j])/(nu[0]*squared(R + K)) );
 
         const Matrix F = sqSig11*E*sqSig11;
@@ -268,7 +267,7 @@ namespace QuantLib {
         for (Size k=1; k < N+1; ++k)
             C[k] = c + trF + nu[k]*sig11d[k-1] + squared(nu[k])
                 * std::inner_product(sig11.row_begin(k-1), sig11.row_end(k-1),
-                                     Esig11.column_begin(k-1), 0.0);
+                                     Esig11.column_begin(k-1), Real(0.0));
 
         std::vector<Array> D(N+2);
         D[0] = sqSig11*(d + 2*nu[0]*Esig10);
