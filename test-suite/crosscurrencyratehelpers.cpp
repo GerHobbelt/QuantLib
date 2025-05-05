@@ -18,9 +18,9 @@
 
 #include "toplevelfixture.hpp"
 #include "utilities.hpp"
-#include "ql/indexes/ibor/eonia.hpp"
-#include "ql/indexes/ibor/sofr.hpp"
-#include "ql/pricingengines/vanilla/all.hpp"
+#include <ql/indexes/ibor/eonia.hpp>
+#include <ql/indexes/ibor/sofr.hpp>
+#include <ql/pricingengines/vanilla/all.hpp>
 #include <ql/experimental/termstructures/crosscurrencyratehelpers.hpp>
 #include <ql/indexes/ibor/euribor.hpp>
 #include <ql/indexes/ibor/usdlibor.hpp>
@@ -480,7 +480,21 @@ BOOST_AUTO_TEST_CASE(testResettingBasisSwapsWithOvernightIndex) {
     bool isBasisOnFxBaseCurrencyLeg = true;
 
     testResettingCrossCurrencySwaps(isFxBaseCurrencyCollateralCurrency, isBasisOnFxBaseCurrencyLeg,
-                                    isFxBaseCurrencyLegResettable, NoFrequency, 0, true);
+                                    isFxBaseCurrencyLegResettable, Quarterly, 0, true);
+}
+
+BOOST_AUTO_TEST_CASE(testResettingBasisSwapsWithOvernightIndexException) {
+    BOOST_TEST_MESSAGE(
+        "Testing resetting basis swaps with collateral in quote ccy and basis in base ccy...");
+
+    bool isFxBaseCurrencyCollateralCurrency = false;
+    bool isFxBaseCurrencyLegResettable = false;
+    bool isBasisOnFxBaseCurrencyLeg = true;
+
+    BOOST_CHECK_THROW(testResettingCrossCurrencySwaps(
+                          isFxBaseCurrencyCollateralCurrency, isBasisOnFxBaseCurrencyLeg,
+                          isFxBaseCurrencyLegResettable, NoFrequency, 0, true),
+        Error);
 }
 
 BOOST_AUTO_TEST_CASE(testExceptionWhenInstrumentTenorShorterThanIndexFrequency) {

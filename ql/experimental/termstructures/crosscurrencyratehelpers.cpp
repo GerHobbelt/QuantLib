@@ -17,6 +17,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/cashflows/overnightindexedcoupon.hpp>
 #include <ql/cashflows/iborcoupon.hpp>
 #include <ql/cashflows/cashflows.hpp>
 #include <ql/cashflows/simplecashflow.hpp>
@@ -51,7 +52,7 @@ namespace QuantLib {
                 .backwards();
         }
 
-        Leg buildIborLeg(const Date& evaluationDate,
+        Leg buildFloatingLeg(const Date& evaluationDate,
                          const Period& tenor,
                          Natural fixingDays,
                          const Calendar& calendar,
@@ -60,9 +61,23 @@ namespace QuantLib {
                          const ext::shared_ptr<IborIndex>& idx,
                          Frequency paymentFrequency,
                          Integer paymentLag) {
-            auto freqPeriod = paymentFrequency == NoFrequency ? idx->tenor() : Period(paymentFrequency);
+            auto overnightIndex = ext::dynamic_pointer_cast<OvernightIndex>(idx);
+
+            Period freqPeriod;
+            if (paymentFrequency == NoFrequency) {
+                QL_REQUIRE(!overnightIndex, "Require payment frequency for overnight indices.");
+                freqPeriod = idx->tenor();
+            } else {
+                freqPeriod = Period(paymentFrequency);
+            }
+
             Schedule sch = legSchedule(evaluationDate, tenor, freqPeriod, fixingDays, calendar,
                                        convention, endOfMonth);
+            if (overnightIndex != nullptr) {
+                return OvernightLeg(sch, overnightIndex)
+                    .withNotionals(1.0)
+                    .withPaymentLag(paymentLag);
+            }
             return IborLeg(sch, idx).withNotionals(1.0).withPaymentLag(paymentLag);
         }
 
@@ -192,8 +207,7 @@ namespace QuantLib {
       collateralHandle_(std::move(collateralCurve)),
       isFxBaseCurrencyCollateralCurrency_(isFxBaseCurrencyCollateralCurrency),
       isBasisOnFxBaseCurrencyLeg_(isBasisOnFxBaseCurrencyLeg),
-      paymentFrequency_(paymentFrequency), paymentLag_(paymentLag),
-      initialNotionalExchangeDate_(Date()), finalNotionalExchangeDate_(Date()) {
+      paymentFrequency_(paymentFrequency), paymentLag_(paymentLag) {
         registerWith(baseCcyIdx_);
         registerWith(quoteCcyIdx_);
         registerWith(collateralHandle_);
@@ -201,9 +215,9 @@ namespace QuantLib {
     }
 
     void CrossCurrencyBasisSwapRateHelperBase::initializeDates() {
-        baseCcyIborLeg_ = buildIborLeg(evaluationDate_, tenor_, fixingDays_, calendar_, convention_,
+        baseCcyIborLeg_ = buildFloatingLeg(evaluationDate_, tenor_, fixingDays_, calendar_, convention_,
                                        endOfMonth_, baseCcyIdx_, paymentFrequency_, paymentLag_);
-        quoteCcyIborLeg_ = buildIborLeg(evaluationDate_, tenor_, fixingDays_, calendar_,
+        quoteCcyIborLeg_ = buildFloatingLeg(evaluationDate_, tenor_, fixingDays_, calendar_,
                                         convention_, endOfMonth_, quoteCcyIdx_, paymentFrequency_, paymentLag_);
         earliestDate_ = std::min(CashFlows::startDate(baseCcyIborLeg_), 
                                 CashFlows::startDate(quoteCcyIborLeg_));
