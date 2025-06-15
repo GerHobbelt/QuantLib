@@ -30,6 +30,10 @@
 
 namespace QuantLib {
 
+#if defined(_MSC_VER)
+#pragma vtordisp(push, 2) // https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-1-c4436?view=msvc-170
+#endif
+
     //! interface for pricing engines
     class PricingEngine : public Observable {
       public:
@@ -72,6 +76,10 @@ namespace QuantLib {
         mutable ArgumentsType arguments_;
         mutable ResultsType results_;
     };
+
+#if defined(_MSC_VER)
+#pragma vtordisp(pop)
+#endif
 
 }
 

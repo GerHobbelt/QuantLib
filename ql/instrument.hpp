@@ -35,6 +35,10 @@
 
 namespace QuantLib {
 
+#if defined(_MSC_VER)
+#pragma vtordisp(push, 2) // https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-1-c4436?view=msvc-170
+#endif
+
     //! Abstract instrument class
     /*! This class is purely abstract and defines the interface of concrete
         instruments which will be derived from this one.
@@ -122,6 +126,10 @@ namespace QuantLib {
         Date valuationDate;
         std::map<std::string, ext::any> additionalResults;
     };
+
+#if defined(_MSC_VER)
+#pragma vtordisp(pop)
+#endif
 
 
     // inline definitions

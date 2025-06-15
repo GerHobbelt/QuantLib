@@ -32,6 +32,10 @@ namespace QuantLib {
     class Payoff;
     class Exercise;
 
+#if defined(_MSC_VER)
+#pragma vtordisp(push, 2) // https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-1-c4436?view=msvc-170
+#endif
+
     //! base option class
     class Option : public Instrument {
       public:
@@ -85,6 +89,10 @@ namespace QuantLib {
         Real itmCashProbability, deltaForward, elasticity, thetaPerDay,
              strikeSensitivity;
     };
+
+#if defined(_MSC_VER)
+#pragma vtordisp(pop)
+#endif
 
 
     // inline definitions
