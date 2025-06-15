@@ -218,6 +218,7 @@ set(QL_SOURCES
     indexes/equityindex.cpp
     indexes/ibor/bibor.cpp
     indexes/ibor/corra.cpp
+    indexes/ibor/custom.cpp
     indexes/ibor/eonia.cpp
     indexes/ibor/estr.cpp
     indexes/ibor/euribor.cpp
@@ -1255,6 +1256,7 @@ set(QL_HEADERS
     indexes/ibor/cdor.hpp
     indexes/ibor/chflibor.hpp
     indexes/ibor/corra.hpp
+    indexes/ibor/custom.hpp
     indexes/ibor/destr.hpp
     indexes/ibor/dkklibor.hpp
     indexes/ibor/eonia.hpp
@@ -2241,6 +2243,7 @@ set(QL_HEADERS
     utilities/observablevalue.hpp
     utilities/steppingiterator.hpp
     utilities/tracing.hpp
+    utilities/variants.hpp
     utilities/vectors.hpp
     version.hpp
     volatilitymodel.hpp

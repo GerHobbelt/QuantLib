@@ -37,7 +37,8 @@ namespace QuantLib {
     //! Rate helper for bootstrapping over Overnight Indexed Swap rates
     class OISRateHelper : public RelativeDateRateHelper {
       public:
-        OISRateHelper(Natural settlementDays,
+        OISRateHelper(
+          Natural settlementDays,
           const Period& tenor, // swap maturity
           const Handle<Quote>& fixedRate,
           const ext::shared_ptr<OvernightIndex>& overnightIndex,
@@ -60,9 +61,11 @@ namespace QuantLib {
           Natural lockoutDays = 0,
           bool applyObservationShift = false,
           ext::shared_ptr<FloatingRateCouponPricer> pricer = {},
-          DateGeneration::Rule rule = DateGeneration::Backward);
+          DateGeneration::Rule rule = DateGeneration::Backward,
+          Calendar overnightCalendar = Calendar());
 
-        OISRateHelper(const Date& startDate,
+        OISRateHelper(
+          const Date& startDate,
           const Date& endDate,
           const Handle<Quote>& fixedRate,
           const ext::shared_ptr<OvernightIndex>& overnightIndex,
@@ -84,7 +87,8 @@ namespace QuantLib {
           Natural lockoutDays = 0,
           bool applyObservationShift = false,
           ext::shared_ptr<FloatingRateCouponPricer> pricer = {},
-          DateGeneration::Rule rule = DateGeneration::Backward);
+          DateGeneration::Rule rule = DateGeneration::Backward,
+          Calendar overnightCalendar = Calendar());
 
         //! \name RateHelper interface
         //@{
@@ -128,6 +132,7 @@ namespace QuantLib {
         ext::optional<bool> endOfMonth_;
         ext::optional<Frequency> fixedPaymentFrequency_;
         Calendar fixedCalendar_;
+        Calendar overnightCalendar_;
         Natural lookbackDays_;
         Natural lockoutDays_;
         bool applyObservationShift_;
