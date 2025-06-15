@@ -45,6 +45,9 @@
 #include <ql/currencies/europe.hpp>
 #include <ql/time/calendars/unitedstates.hpp>
 #include <ql/utilities/dataformatters.hpp>
+#include <ql/indexes/ibor/sonia.hpp>
+#include <ql/indexes/ibor/eonia.hpp>
+#include <ql/indexes/ibor/corra.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -769,12 +772,13 @@ BOOST_AUTO_TEST_CASE(testBootstrapWithDifferentCalendars) {
 
     auto calendar = UnitedStates(UnitedStates::FederalReserve);
 
-    for (Size i=0; i<std::size(data); ++i) {
+    helpers.reserve(std::size(data));
+for (auto & i : data) {
         helpers.push_back(
             ext::make_shared<OISRateHelper>(
-                                  data[i].settlementDays,
-                                  Period(data[i].n, data[i].unit),
-                                  makeQuoteHandle(data[i].rate),
+                                  i.settlementDays,
+                                  Period(i.n, i.unit),
+                                  makeQuoteHandle(i.rate),
                                   index,
                                   Handle<YieldTermStructure>(),
                                   false, 0,
@@ -963,6 +967,37 @@ BOOST_AUTO_TEST_CASE(testNotifications) {
 
     if (!flag.isUp())
         BOOST_FAIL("OIS was not notified of curve change");
+}
+
+BOOST_AUTO_TEST_CASE(testMakeOISDefaultSettlementDays) {
+    BOOST_TEST_MESSAGE("Testing default settlement days in MakeOIS...");
+
+    Date today(12, May, 2025);
+    Settings::instance().evaluationDate() = today;
+
+    auto sonia = ext::make_shared<Sonia>();
+    auto corra = ext::make_shared<Corra>();
+    auto eonia = ext::make_shared<Eonia>();
+
+    // SONIA: 0-day settlement
+    {
+        OvernightIndexedSwap swap = MakeOIS(6 * Months, sonia, 0.01);
+        Date expected(12, May, 2025);
+        BOOST_CHECK_EQUAL(swap.startDate(), expected);
+    }
+    // CORRA: 0-day settlement
+    {
+        OvernightIndexedSwap swap = MakeOIS(6 * Months, corra, 0.01);
+        Date expected(12, May, 2025); 
+        BOOST_CHECK_EQUAL(swap.startDate(), expected);
+    }
+
+    // EONIA: 2-day settlement
+    {
+        OvernightIndexedSwap swap = MakeOIS(6 * Months, eonia, 0.01);
+        Date expected(14, May, 2025);
+        BOOST_CHECK_EQUAL(swap.startDate(), expected);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
