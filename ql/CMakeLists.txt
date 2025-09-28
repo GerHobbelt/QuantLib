@@ -217,6 +217,7 @@ set(QL_SOURCES
     indexes/bmaindex.cpp
     indexes/equityindex.cpp
     indexes/ibor/bibor.cpp
+    indexes/ibor/cdi.cpp
     indexes/ibor/corra.cpp
     indexes/ibor/custom.cpp
     indexes/ibor/eonia.cpp
@@ -1255,6 +1256,7 @@ set(QL_HEADERS
     indexes/ibor/bibor.hpp
     indexes/ibor/bkbm.hpp
     indexes/ibor/cadlibor.hpp
+    indexes/ibor/cdi.hpp
     indexes/ibor/cdor.hpp
     indexes/ibor/chflibor.hpp
     indexes/ibor/corra.hpp
@@ -1285,6 +1287,7 @@ set(QL_HEADERS
     indexes/ibor/thbfix.hpp
     indexes/ibor/tibor.hpp
     indexes/ibor/tona.hpp
+    indexes/ibor/tonar.hpp
     indexes/ibor/trlibor.hpp
     indexes/ibor/usdlibor.hpp
     indexes/ibor/wibor.hpp
@@ -2152,10 +2155,13 @@ set(QL_HEADERS
     termstructures/yield/nonlinearfittingmethods.hpp
     termstructures/yield/oisratehelper.hpp
     termstructures/yield/overnightindexfutureratehelper.hpp
+    termstructures/yield/piecewisespreadyieldcurve.hpp
     termstructures/yield/piecewiseyieldcurve.hpp
     termstructures/yield/piecewisezerospreadedtermstructure.hpp
     termstructures/yield/quantotermstructure.hpp
     termstructures/yield/ratehelpers.hpp
+    termstructures/yield/spreadbootstraptraits.hpp
+    termstructures/yield/spreaddiscountcurve.hpp
     termstructures/yield/ultimateforwardtermstructure.hpp
     termstructures/yield/zerocurve.hpp
     termstructures/yield/zerospreadedtermstructure.hpp

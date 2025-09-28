@@ -826,6 +826,7 @@
     <ClInclude Include="ql\indexes\ibor\bibor.hpp" />
     <ClInclude Include="ql\indexes\ibor\bkbm.hpp" />
     <ClInclude Include="ql\indexes\ibor\cadlibor.hpp" />
+    <ClInclude Include="ql\indexes\ibor\cdi.hpp" />
     <ClInclude Include="ql\indexes\ibor\cdor.hpp" />
     <ClInclude Include="ql\indexes\ibor\chflibor.hpp" />
     <ClInclude Include="ql\indexes\ibor\corra.hpp" />
@@ -856,6 +857,7 @@
     <ClInclude Include="ql\indexes\ibor\thbfix.hpp" />
     <ClInclude Include="ql\indexes\ibor\tibor.hpp" />
     <ClInclude Include="ql\indexes\ibor\tona.hpp" />
+    <ClInclude Include="ql\indexes\ibor\tonar.hpp" />
     <ClInclude Include="ql\indexes\ibor\trlibor.hpp" />
     <ClInclude Include="ql\indexes\ibor\usdlibor.hpp" />
     <ClInclude Include="ql\indexes\ibor\wibor.hpp" />
@@ -950,6 +952,7 @@
     <ClInclude Include="ql\instruments\quantovanillaoption.hpp" />
     <ClInclude Include="ql\instruments\simplechooseroption.hpp" />
     <ClInclude Include="ql\instruments\simplifynotificationgraph.hpp" />
+    <ClInclude Include="ql\instruments\softbarrieroption.hpp" />
     <ClInclude Include="ql\instruments\stickyratchet.hpp" />
     <ClInclude Include="ql\instruments\stock.hpp" />
     <ClInclude Include="ql\instruments\swap.hpp" />
@@ -1497,6 +1500,7 @@
     <ClInclude Include="ql\pricingengines\barrier\analyticdoublebarrierbinaryengine.hpp" />
     <ClInclude Include="ql\pricingengines\barrier\analyticdoublebarrierengine.hpp" />
     <ClInclude Include="ql\pricingengines\barrier\analyticpartialtimebarrieroptionengine.hpp" />
+    <ClInclude Include="ql\pricingengines\barrier\analyticsoftbarrierengine.hpp" />
     <ClInclude Include="ql\pricingengines\barrier\analytictwoassetbarrierengine.hpp" />
     <ClInclude Include="ql\pricingengines\barrier\binomialbarrierengine.hpp" />
     <ClInclude Include="ql\pricingengines\barrier\discretizedbarrieroption.hpp" />
@@ -1781,10 +1785,13 @@
     <ClInclude Include="ql\termstructures\yield\nonlinearfittingmethods.hpp" />
     <ClInclude Include="ql\termstructures\yield\oisratehelper.hpp" />
     <ClInclude Include="ql\termstructures\yield\overnightindexfutureratehelper.hpp" />
+    <ClInclude Include="ql\termstructures\yield\piecewisespreadyieldcurve.hpp" />
     <ClInclude Include="ql\termstructures\yield\piecewiseyieldcurve.hpp" />
     <ClInclude Include="ql\termstructures\yield\piecewisezerospreadedtermstructure.hpp" />
     <ClInclude Include="ql\termstructures\yield\quantotermstructure.hpp" />
     <ClInclude Include="ql\termstructures\yield\ratehelpers.hpp" />
+    <ClInclude Include="ql\termstructures\yield\spreadbootstraptraits.hpp" />
+    <ClInclude Include="ql\termstructures\yield\spreaddiscountcurve.hpp" />
     <ClInclude Include="ql\termstructures\yield\ultimateforwardtermstructure.hpp" />
     <ClInclude Include="ql\termstructures\yield\zerocurve.hpp" />
     <ClInclude Include="ql\termstructures\yield\zerospreadedtermstructure.hpp" />
@@ -2132,6 +2139,7 @@
     <ClCompile Include="ql\indexes\bmaindex.cpp" />
     <ClCompile Include="ql\indexes\equityindex.cpp" />
     <ClCompile Include="ql\indexes\ibor\bibor.cpp" />
+    <ClCompile Include="ql\indexes\ibor\cdi.cpp" />
     <ClCompile Include="ql\indexes\ibor\corra.cpp" />
     <ClCompile Include="ql\indexes\ibor\custom.cpp" />
     <ClCompile Include="ql\indexes\ibor\eonia.cpp" />
@@ -2221,6 +2229,7 @@
     <ClCompile Include="ql\instruments\quantovanillaoption.cpp" />
     <ClCompile Include="ql\instruments\simplechooseroption.cpp" />
     <ClCompile Include="ql\instruments\simplifynotificationgraph.cpp" />
+    <ClCompile Include="ql\instruments\softbarrieroption.cpp" />
     <ClCompile Include="ql\instruments\stickyratchet.cpp" />
     <ClCompile Include="ql\instruments\stock.cpp" />
     <ClCompile Include="ql\instruments\swap.cpp" />
@@ -2575,6 +2584,7 @@
     <ClCompile Include="ql\pricingengines\barrier\analyticdoublebarrierbinaryengine.cpp" />
     <ClCompile Include="ql\pricingengines\barrier\analyticdoublebarrierengine.cpp" />
     <ClCompile Include="ql\pricingengines\barrier\analyticpartialtimebarrieroptionengine.cpp" />
+    <ClCompile Include="ql\pricingengines\barrier\analyticsoftbarrierengine.cpp" />
     <ClCompile Include="ql\pricingengines\barrier\analytictwoassetbarrierengine.cpp" />
     <ClCompile Include="ql\pricingengines\barrier\discretizedbarrieroption.cpp" />
     <ClCompile Include="ql\pricingengines\barrier\fdblackscholesbarrierengine.cpp" />
