@@ -35,7 +35,6 @@ namespace QuantLib {
                      const Period& forwardStart)
     : swapTenor_(swapTenor), overnightIndex_(overnightIndex), fixedRate_(fixedRate),
       forwardStart_(forwardStart),
-      settlementDays_(Null<Natural>()),
       fixedCalendar_(overnightIndex->fixingCalendar()),
       overnightCalendar_(overnightIndex->fixingCalendar()),
       fixedDayCount_(overnightIndex->dayCounter()) {}
@@ -54,10 +53,13 @@ namespace QuantLib {
             // settlement days: override if set, else fallback to default by index name
             Natural settlementDays = settlementDays_;
             if (settlementDays == Null<Natural>()) {
-                if (ext::dynamic_pointer_cast<Sonia>(overnightIndex_) 
-                    || ext::dynamic_pointer_cast<Corra>(overnightIndex_)) {
-                    settlementDays = 0;
-                } else {
+                if (ext::dynamic_pointer_cast<Sonia>(overnightIndex_)) {
+                    settlementDays = 0; 
+                }
+                else if (ext::dynamic_pointer_cast<Corra>(overnightIndex_)) {
+                    settlementDays = 1;
+                }
+                else {
                     settlementDays = 2;
                 }
             }            
